@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tic Tac Toe (User vs Computer)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #141e30, #243b55);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: white;
+    }
+    .container { text-align: center; }
+    h1 {
+      margin-bottom: 20px;
+      color: #ffcc00;
+      text-shadow: 0 0 8px #ffcc00aa;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 8px;
+      margin: auto;
+    }
+    .cell {
+      background: #2a2a40;
+      border-radius: 12px;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #ffcc00;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    }
+    .cell:hover { background: #3a3a55; transform: scale(1.05); }
+    .cell.taken { cursor: not-allowed; }
+    .cell.win {
+      background: #00b894 !important; color: #fff !important;
+      animation: glow 1s infinite alternate;
+    }
+    @keyframes glow {
+      from { box-shadow: 0 0 10px #00b894; }
+      to { box-shadow: 0 0 25px #00ffcc; }
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      text-shadow: 0 0 6px #fff5;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #ffcc00;
+      color: #1e1e2f;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    button:hover { background: #e6b800; transform: scale(1.05); }
+    @media (max-width: 500px) {
+      .board {
+        grid-template-columns: repeat(3, 80px);
+        grid-template-rows: repeat(3, 80px);
+        gap: 6px;
+      }
+      .cell { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✨ Tic Tac Toe (User vs Computer) ✨</h1>
+    <div class="board" id="board"></div>
+    <p id="status">Your turn (X)</p>
+    <button onclick="resetGame()">Restart 🔄</button>
+  </div>
+
+  <script>
+    const board = document.getElementById("board");
+    const statusText = document.getElementById("status");
+    let currentPlayer = "X"; // User always "X"
+    let gameActive = true;
+    let gameState = ["", "", "", "", "", "", "", "", ""];
+
+    const winningConditions = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    function createBoard() {
+      board.innerHTML = "";
+      gameState = ["", "", "", "", "", "", "", "", ""];
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.setAttribute("data-index", i);
+        cell.addEventListener("click", handleCellClick);
+        board.appendChild(cell);
+      }
+    }
+
+    function handleCellClick(e) {
+      const cell = e.target;
+      const index = cell.getAttribute("data-index");
+
+      if (gameState[index] !== "" || !gameActive || currentPlayer !== "X") return;
+
+      makeMove(index, "X");
+
+      if (!gameActive) return;
+
+      // Computer ka move (thoda delay ke sath natural feel ke liye)
+      setTimeout(() => {
+        computerMove();
+      }, 600);
+    }
+
+    function makeMove(index, player) {
+      gameState[index] = player;
+      const cell = document.querySelector(`[data-index='${index}']`);
+      cell.textContent = player;
+      cell.classList.add("taken");
+
+      if (checkWin(player)) {
+        statusText.textContent = `🎉 ${player === "X" ? "You" : "Computer"} Wins! 🎉`;
+        gameActive = false;
+        highlightWinningCells();
+        return;
+      }
+
+      if (!gameState.includes("")) {
+        statusText.textContent = "😮 It's a Draw!";
+        gameActive = false;
+        return;
+      }
+
+      currentPlayer = player === "X" ? "O" : "X";
+      statusText.textContent = currentPlayer === "X" ? "Your turn (X)" : "Computer's turn (O)";
+    }
+
+    function computerMove() {
+      if (!gameActive) return;
+
+      const emptyCells = gameState
+        .map((val, idx) => (val === "" ? idx : null))
+        .filter(val => val !== null);
+
+      if (emptyCells.length === 0) return;
+
+      // Random move choose karega
+      const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      makeMove(randomIndex, "O");
+    }
+
+    function checkWin(player) {
+      return winningConditions.some(condition => {
+        const [a, b, c] = condition;
+        return (gameState[a] === player && gameState[b] === player && gameState[c] === player);
+      });
+    }
+
+    function highlightWinningCells() {
+      winningConditions.forEach(condition => {
+        const [a, b, c] = condition;
+        if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
+          document.querySelector(`[data-index='${a}']`).classList.add("win");
+          document.querySelector(`[data-index='${b}']`).classList.add("win");
+          document.querySelector(`[data-index='${c}']`).classList.add("win");
+        }
+      });
+    }
+
+    function resetGame() {
+      currentPlayer = "X";
+      gameActive = true;
+      statusText.textContent = "Your turn (X)";
+      createBoard();
+    }
+
+    createBoard();
+  </script>
+</body>
+</html>
